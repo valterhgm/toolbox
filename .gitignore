@@ -1,0 +1,31 @@
+# Scala / sbt
+target/
+project/target/
+project/project/
+*.class
+.bloop/
+.bsp/
+.metals/
+.ammonite/
+metals.sbt
+
+# Node / JS
+node_modules/
+.next/
+dist/
+build/
+.pnpm-store/
+*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.iml

@@ -1,0 +1,11 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: toolbox-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - toolbox-mongo-data:/data/db
+
+volumes:
+  toolbox-mongo-data:
