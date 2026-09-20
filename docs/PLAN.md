@@ -255,6 +255,33 @@ long-tail query (e.g. "compress image to 2mb online").
 
 ---
 
+## Infrastructure: GitHub + CI
+
+**Goal:** the code lives somewhere durable, and every push/PR is checked automatically.
+
+- [x] GitHub repo created (`toolbox`, public), pushed
+- [x] `.github/workflows/ci.yml`: two parallel jobs on every push/PR to `main`.
+      `api` runs `sbt test` against a real MongoDB service container. `web`
+      runs lint, unit tests, build, and the full Playwright E2E suite.
+      Set up and debugged by hand (not by Claude) as a deliberate learning
+      exercise. Two real bugs found and fixed along the way:
+  - `pnpm/action-setup` couldn't auto-detect the pnpm version, since it
+    looks for a root-level `package.json`, which doesn't exist in this
+    monorepo (the `packageManager` field lives in `apps/web/package.json`).
+    Fixed by specifying `version: 12.4.2` explicitly in the workflow.
+  - Vitest's `jsdom` environment crashed in CI (`webidl.util.markAsUncloneable
+    is not a function`), a real jsdom/undici version incompatibility that
+    only surfaced on a fresh CI install. None of our tests actually use
+    jsdom or the DOM (all pure functions), so the fix was to stop asking
+    for an environment we don't need: `environment: "node"` instead.
+
+**Milestone: ACHIEVED.** Every push and PR now runs the full test suite
+(Scala + web) automatically, with a real MongoDB service container for the
+Scala side, matching the plan's "every feature goes through a PR" rule with
+actual enforcement behind it.
+
+---
+
 ## Working agreements (from the original discussion, worth keeping)
 
 - Every non-trivial architecture decision gets a short ADR in `docs/adr/`, written *before* the code.
