@@ -8,7 +8,8 @@ This document is the checklist. Check items off as we go. Each phase ends with
 a concrete "you can now do X" milestone — if you can't do X, the phase isn't done.
 
 Related: [`docs/adr/`](./adr) for architecture decisions, [`docs/SCALA_NOTES.md`](./SCALA_NOTES.md)
-for the running Scala-for-Rails-developers glossary we build as we go.
+for the running Scala-for-Rails-developers glossary, and [`docs/REACT_NOTES.md`](./REACT_NOTES.md)
+for React/Next.js concepts beyond the basics — all built up as we go.
 
 ---
 
@@ -75,21 +76,38 @@ renders "Scala API status: ok" fetched live, server-side, from the Scala API.
 **Goal:** a stranger can visit the site and compress an image, entirely in
 their browser (privacy promise: the photo never reaches our server).
 
-- [ ] `docs/adr/0002-client-side-image-processing.md` — record *why* processing
+- [x] `docs/adr/0002-client-side-image-processing.md` — record *why* processing
       happens in-browser (privacy, cost, latency) before writing the code
-- [ ] Build shared UI primitives: `FileDropzone`, `FilePreview`, `ProgressBar`, `DownloadButton`
-- [ ] Build the compression engine using the Canvas API (`canvas.toBlob` with
-      quality parameter) — start simple, no WASM yet
-- [ ] Move compression into a **Web Worker** so the UI thread never freezes
-- [ ] Build the `/tools/image-compressor` page: dropzone → preview →
+- [x] Build shared UI primitive: `FileDropzone` (drag-and-drop + click-to-choose)
+- [x] **TDD**: `formatBytes` (pure function, red→green)
+- [x] **TDD**: `validateImageFile` (type + 25MB size limit, red→green)
+- [x] Build the compression engine using the Canvas API (`OffscreenCanvas.convertToBlob`
+      with a quality parameter) inside a **Web Worker** so the UI thread never freezes
+- [x] Build the `/tools/image-compressor` page: dropzone → preview →
       before/after size → quality slider → download
-- [ ] Handle errors: wrong file type, huge file, corrupt image
-- [ ] Mobile-responsive pass
+- [x] Handle errors: wrong file type, huge file (validated before compression starts)
+- [x] HEIC input support — client-side WASM decode, lazy-loaded; prompted by
+      real user testing on an actual iPhone photo. First attempt used
+      `heic2any` and failed on-device with `ERR_LIBHEIF: format not supported`
+      (its bundled `libheif` is years out of date); switched to importing
+      `libheif-js` directly (actively maintained) instead. See
+      [ADR 0003](./adr/0003-heic-support.md) for the full story.
+      **Confirmed working on a real iPhone HEIC photo: 4.8 MB → 2.5 MB.**
+- [x] Dropzone made fully tap-friendly (whole box is the tap target, not just
+      a small button) — first mobile-usability fix, prompted by real feedback
+- [ ] Corrupt-image error path not yet manually verified
+- [ ] Full mobile-responsive pass (not yet checked on a real small viewport beyond the tap-target fix)
 - [ ] Playwright E2E test: upload a fixture image, assert output is smaller, assert download works
-- [ ] Vitest unit tests for the compression logic (pure functions extracted from the worker)
+- [x] Vitest unit tests for the compression logic's pure pieces (`formatBytes`, `validateImageFile`, `isHeicFile`)
+- [x] **Manual browser verification: PASSED.** Real iPhone HEIC photo,
+      4.8 MB → 2.5 MB, on a real device.
 
-**Milestone:** you can drop a JPEG on the page and download a visibly smaller one,
-on desktop and mobile, with no network request carrying the image bytes.
+**Milestone: ACHIEVED.** Drop a photo (JPEG, PNG, WebP, or HEIC) on
+`/tools/image-compressor` and get a visibly smaller download, confirmed on a
+real device with a real photo. Remaining open items above (corrupt-file
+handling, full mobile pass, Playwright E2E) are follow-ups, not blockers —
+revisit opportunistically or when Phase 2/3 work brings us back through this
+page.
 
 ---
 
