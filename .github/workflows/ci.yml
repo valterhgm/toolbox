@@ -1,0 +1,55 @@
+name: CI
+on:
+    push:
+      branches: [main]
+    pull_request:
+      branches: [main]
+jobs:
+    api:
+      name: Scala API
+      runs-on: ubuntu-latest
+      services:
+        mongodb:
+          image: mongo:7
+          ports:
+            - 27017:27017
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-java@v4
+          with:
+            distribution: temurin
+            java-version: "21"
+        - uses: sbt/setup-sbt@v1
+        - name: Run tests
+          working-directory: apps/api
+          run: sbt test
+
+    web:
+      name: Next.js Web
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: pnpm/action-setup@v4
+        - uses: actions/setup-node@v4
+          with:
+            node-version: 20
+            cache: pnpm
+            cache-dependency-path: apps/web/pnpm-lock.yaml
+        - name: Install dependencies
+          working-directory: apps/web
+          run: pnpm install
+        - name: Lint
+          working-directory: apps/web
+          run: pnpm lint
+        - name: Unit tests
+          working-directory: apps/web
+          run: pnpm test
+        - name: Build
+          working-directory: apps/web
+          run: pnpm build
+        - name: Install Playwright browsers
+          working-directory: apps/web
+          run: pnpm exec playwright install --with-deps chromium webkit
+        - name: E2E tests
+          working-directory: apps/web
+          run: pnpm test:e2e
