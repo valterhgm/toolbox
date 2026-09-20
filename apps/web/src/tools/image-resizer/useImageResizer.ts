@@ -1,29 +1,29 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { CompressRequest, CompressResponse } from "./compressor.worker";
+import type { ResizeRequest, ResizeResponse } from "./resizer.worker";
 
-type CompressorState =
+type ResizerState =
   | { status: "idle" }
-  | { status: "compressing" }
+  | { status: "resizing" }
   | { status: "done"; blob: Blob }
   | { status: "error"; message: string };
 
-export function useImageCompressor() {
-  const [state, setState] = useState<CompressorState>({ status: "idle" });
+export function useImageResizer() {
+  const [state, setState] = useState<ResizerState>({ status: "idle" });
   const workerRef = useRef<Worker | null>(null);
 
-  const compress = useCallback((file: File, quality: number) => {
-    setState({ status: "compressing" });
+  const resize = useCallback((file: File, width: number, height: number) => {
+    setState({ status: "resizing" });
 
     if (!workerRef.current) {
       workerRef.current = new Worker(
-        new URL("./compressor.worker.ts", import.meta.url),
+        new URL("./resizer.worker.ts", import.meta.url),
       );
     }
     const worker = workerRef.current;
 
-    worker.onmessage = (event: MessageEvent<CompressResponse>) => {
+    worker.onmessage = (event: MessageEvent<ResizeResponse>) => {
       const response = event.data;
       if (response.ok) {
         setState({ status: "done", blob: response.blob });
@@ -32,11 +32,11 @@ export function useImageCompressor() {
       }
     };
 
-    const request: CompressRequest = { file, quality };
+    const request: ResizeRequest = { file, width, height };
     worker.postMessage(request);
   }, []);
 
   const reset = useCallback(() => setState({ status: "idle" }), []);
 
-  return { state, compress, reset };
+  return { state, resize, reset };
 }

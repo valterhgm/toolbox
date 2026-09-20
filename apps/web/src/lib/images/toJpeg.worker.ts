@@ -1,13 +1,13 @@
-export type CompressRequest = {
+export type ToJpegRequest = {
   file: File;
   quality: number;
 };
 
-export type CompressResponse =
+export type ToJpegResponse =
   | { ok: true; blob: Blob }
   | { ok: false; error: string };
 
-self.onmessage = async (event: MessageEvent<CompressRequest>) => {
+self.onmessage = async (event: MessageEvent<ToJpegRequest>) => {
   const { file, quality } = event.data;
 
   try {
@@ -19,10 +19,10 @@ self.onmessage = async (event: MessageEvent<CompressRequest>) => {
     ctx.drawImage(bitmap, 0, 0);
     const blob = await canvas.convertToBlob({ type: "image/jpeg", quality });
 
-    const response: CompressResponse = { ok: true, blob };
+    const response: ToJpegResponse = { ok: true, blob };
     self.postMessage(response);
   } catch (err) {
-    const response: CompressResponse = {
+    const response: ToJpegResponse = {
       ok: false,
       error: err instanceof Error ? err.message : "Unknown error",
     };
