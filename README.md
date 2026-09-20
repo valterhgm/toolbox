@@ -3,10 +3,8 @@
 Free, private, browser-first tools, starting with an image compressor.
 Photos are processed on your device and never uploaded.
 
-See [`docs/PLAN.md`](docs/PLAN.md) for the full build plan and current phase,
-[`docs/adr/`](docs/adr) for architecture decisions, and
-[`docs/SCALA_NOTES.md`](docs/SCALA_NOTES.md) / [`docs/REACT_NOTES.md`](docs/REACT_NOTES.md)
-for the running Scala/React glossary built up along the way.
+Planning docs, architecture decisions, and running Scala/React notes are
+kept locally under `docs/` (not tracked in this repo).
 
 ## Stack
 
@@ -24,7 +22,7 @@ docker compose up -d
 
 Available at `mongodb://localhost:27017`. The API's `sbt test` and `sbt run`
 both expect this to be running (the events feature talks to a real Mongo,
-including in tests, see `docs/adr/0004-analytics-events.md`).
+including in tests).
 
 ### API (Scala)
 

@@ -14,7 +14,11 @@ import scala.concurrent.duration._
 
 object Main extends IOApp.Simple:
 
-  private val mongoUri = "mongodb://localhost:27017"
+  private val mongoUri =
+    sys.env.getOrElse("MONGO_URI", "mongodb://localhost:27017")
+
+  private val serverPort =
+    sys.env.get("PORT").flatMap(_.toIntOption).flatMap(Port.fromInt).getOrElse(port"8080")
 
   val run: IO[Unit] =
     MongoClient.fromConnectionString[IO](mongoUri).use { client =>
@@ -34,7 +38,7 @@ object Main extends IOApp.Simple:
         _ <- EmberServerBuilder
           .default[IO]
           .withHost(host"0.0.0.0")
-          .withPort(port"8080")
+          .withPort(serverPort)
           .withHttpApp(CORS.policy.withAllowOriginAll(httpApp))
           .build
           .useForever

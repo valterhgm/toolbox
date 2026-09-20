@@ -1,3 +1,6 @@
+import sbtassembly.AssemblyPlugin.autoImport._
+import sbtassembly.MergeStrategy
+
 val scala3Version           = "3.3.4"
 val http4sVersion           = "0.23.27"
 val circeVersion            = "0.14.9"
@@ -20,5 +23,14 @@ lazy val root = project
       "org.typelevel"   %% "munit-cats-effect"         % munitCatsEffectVersion % Test
     ),
     testFrameworks += new TestFramework("munit.Framework"),
-    Compile / run / fork := true
+    Compile / run / fork := true,
+    // Produces a single runnable "fat jar" (apps/api/target/scala-3.3.4/toolbox-api.jar)
+    // for the Docker deploy - see infrastructure/Dockerfile.
+    assembly / mainClass       := Some("toolbox.api.Main"),
+    assembly / assemblyJarName := "toolbox-api.jar",
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case "module-info.class"           => MergeStrategy.discard
+      case _                             => MergeStrategy.first
+    }
   )

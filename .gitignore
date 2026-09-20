@@ -22,6 +22,9 @@ build/
 .env.local
 .env.*.local
 
+# Internal planning docs (kept locally, not tracked in git)
+docs/
+
 # OS
 .DS_Store
 
