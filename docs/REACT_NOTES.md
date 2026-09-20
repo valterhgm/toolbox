@@ -139,6 +139,42 @@ same root for both. It's a small, self-contained algorithm worth
 recognizing on sight — it shows up constantly for "group these things by
 some transitive relationship" problems.
 
+## Declaration merging: patching a *built-in* type, not declaring a new one
+
+The `libheif-js` ambient declaration (above) invents types for a module
+that ships none. `FileSystemDirectoryHandle` is different: TypeScript
+*already* knows this type (it's in `lib.dom.d.ts`), just without its
+async-iteration methods (`.values()`) — a real gap in this TS version's
+bundled DOM types for a newer part of the File System Access API spec.
+Since TypeScript interfaces are open (declaring the same interface name
+twice merges the members rather than conflicting), a small
+`declare global { interface FileSystemDirectoryHandle { values(): ... } }`
+adds the missing methods onto the *existing* global type instead of
+shadowing it. Same underlying tool (ambient `.d.ts` files) as the
+`libheif-js` case, but a different move: extending a type you don't own,
+rather than describing one TypeScript has never heard of.
+
+## Feature detection without breaking hydration
+
+```ts
+const [supportsFolderScan, setSupportsFolderScan] = useState(false);
+useEffect(() => {
+  setSupportsFolderScan(typeof window.showDirectoryPicker === "function");
+}, []);
+```
+
+Checking a browser-only API (`window.showDirectoryPicker`) during the
+initial render would make the server-rendered HTML and the client's first
+render disagree — `window` doesn't exist on the server, so the answer
+would flip the instant the browser takes over, which React flags as a
+hydration mismatch. Setting it a tick later, inside `useEffect` (which
+never runs during server rendering), means the first render matches on
+both sides, and the "real" answer arrives immediately after mount with a
+single, harmless extra render. This is a deliberate, standard exception to
+the general "don't call `setState` synchronously inside an effect" advice
+— that advice is about avoiding *unnecessary* cascading renders, not about
+never doing this specific, well-known "browser-only capability" check.
+
 ## `useRef` vs `useState`
 
 In `useImageCompressor.ts`, the `Worker` instance is stored in a `useRef`, not

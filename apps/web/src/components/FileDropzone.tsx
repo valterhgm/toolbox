@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type DragEvent } from "react";
+import { useCallback, useState, type DragEvent, type ReactNode } from "react";
 import { UploadCloud } from "lucide-react";
 
 type FileDropzoneProps = {
@@ -8,7 +8,7 @@ type FileDropzoneProps = {
   hint: string;
   onFilesSelected: (files: File[]) => void;
   multiple?: boolean;
-  label?: string;
+  label?: ReactNode;
 };
 
 export function FileDropzone({

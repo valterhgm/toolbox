@@ -161,6 +161,13 @@ grids, generous whitespace):
 - [x] tsconfig `target` bumped `ES2017` → `ES2020` (a real, necessary fix -
       BigInt literals, needed for the 64-bit perceptual hash, aren't valid
       syntax below ES2020)
+- [x] **Revised the same day**, per explicit follow-up feedback: redesigned
+      as an adaptive "scan for duplicates" flow (real folder scan via the
+      File System Access API where supported, native multi-select picker
+      elsewhere — notably iPhone Safari, which has no folder-access API at
+      all) with an upfront savings estimate and a "Keep"/"Extra copy" label
+      per photo. See ADR 0005's revision note for the real browser
+      constraints this was designed around. 30/30 Playwright tests passing.
 
 **Milestone: ACHIEVED.** All five tools from the original plan exist,
 styled consistently, each independently E2E-tested: 28/28 Playwright tests
