@@ -108,6 +108,37 @@ Two deliberate choices here, both unusual outside an analytics context:
   everywhere else in this codebase, where swallowing an error silently
   would be a bug worth flagging in review.
 
+## `BigInt` — when 64 bits of precision actually matters
+
+```ts
+let hash = 0n;
+hash = (hash << 1n) | (left > right ? 1n : 0n);
+```
+
+Regular JS numbers are IEEE-754 doubles — safe for integers only up to
+2^53, not the full 64 bits we need for a dHash (8 rows × 8 bits). `BigInt`
+(the `n` suffix) is a second, separate numeric type with arbitrary
+precision and its own operators (`<<`, `|`, `^`, etc. all work, but can't
+mix a `bigint` and a regular `number` in the same expression without an
+explicit conversion). Closest Ruby comparison: Ruby's `Integer` is already
+arbitrary-precision by default (auto-promotes from a fixnum), so this
+distinction mostly doesn't exist there — it's a JS-specific wrinkle worth
+knowing, and the reason `computeDHash`/`hammingDistance` take/return
+`bigint`, not `number`.
+
+## Union-find (disjoint-set), for "these things belong in the same group"
+
+`groupNearDuplicates` needs to turn a list of pairwise "is A similar to B?"
+comparisons into groups, where similarity should be *transitive* (A~B and
+B~C means all three are one group, even if A and C aren't directly close
+enough). **Union-find** is the standard data structure for exactly this:
+each item starts as its own "set," and `union(a, b)` merges two sets by
+pointing one set's root at the other; `find(x)` walks up to the current
+root of x's set. Two items are in the same group iff `find` returns the
+same root for both. It's a small, self-contained algorithm worth
+recognizing on sight — it shows up constantly for "group these things by
+some transitive relationship" problems.
+
 ## `useRef` vs `useState`
 
 In `useImageCompressor.ts`, the `Worker` instance is stored in a `useRef`, not
