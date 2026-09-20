@@ -95,19 +95,24 @@ their browser (privacy promise: the photo never reaches our server).
       **Confirmed working on a real iPhone HEIC photo: 4.8 MB → 2.5 MB.**
 - [x] Dropzone made fully tap-friendly (whole box is the tap target, not just
       a small button) — first mobile-usability fix, prompted by real feedback
-- [ ] Corrupt-image error path not yet manually verified
-- [ ] Full mobile-responsive pass (not yet checked on a real small viewport beyond the tap-target fix)
-- [ ] Playwright E2E test: upload a fixture image, assert output is smaller, assert download works
+- [x] Corrupt-image error path — verified via Playwright: a bogus `.jpg`
+      correctly shows an error and never offers a download
+- [x] Basic mobile-responsive check — Playwright asserts no horizontal
+      overflow at iPhone 14 viewport width (a full manual design pass is
+      still a good idea eventually, but the automated baseline is covered)
+- [x] Playwright E2E tests (`apps/web/e2e/image-compressor.spec.ts`), run
+      across both Chromium and WebKit (mobile Safari emulation): JPEG
+      compression with a genuine byte-level size check, HEIC conversion,
+      corrupt-file error handling, and viewport overflow — **8/8 passing**
 - [x] Vitest unit tests for the compression logic's pure pieces (`formatBytes`, `validateImageFile`, `isHeicFile`)
 - [x] **Manual browser verification: PASSED.** Real iPhone HEIC photo,
       4.8 MB → 2.5 MB, on a real device.
 
-**Milestone: ACHIEVED.** Drop a photo (JPEG, PNG, WebP, or HEIC) on
-`/tools/image-compressor` and get a visibly smaller download, confirmed on a
-real device with a real photo. Remaining open items above (corrupt-file
-handling, full mobile pass, Playwright E2E) are follow-ups, not blockers —
-revisit opportunistically or when Phase 2/3 work brings us back through this
-page.
+**Milestone: ACHIEVED, and now backed by automated tests.** Drop a photo
+(JPEG, PNG, WebP, or HEIC) on `/tools/image-compressor` and get a visibly
+smaller download — confirmed on a real device with a real photo, and now
+also covered by 8 passing Playwright tests across two browser engines so
+this doesn't silently regress later. Phase 1 is closed.
 
 ---
 
