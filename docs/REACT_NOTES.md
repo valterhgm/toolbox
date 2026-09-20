@@ -78,6 +78,36 @@ checking instead of reaching for `any`. Any `.d.ts` anywhere under `src/`
 is picked up automatically by `tsconfig.json`'s `**/*.ts` include pattern —
 no registration step needed.
 
+## `NEXT_PUBLIC_` — the difference between a server secret and a browser-visible value
+
+The homepage's health check (`API_BASE_URL`) runs in a Server Component —
+that code only ever executes on the server, so a plain env var is fine.
+`trackEvent()`, though, runs in the browser (it's called from a `"use client"`
+component), so it needs `NEXT_PUBLIC_API_BASE_URL` instead — the
+`NEXT_PUBLIC_` prefix is Next.js's signal to actually bundle that value into
+the client-side JavaScript at build time. Anything *without* that prefix is
+stripped from client bundles entirely — which is exactly the safety net that
+keeps real secrets (API keys, database URLs) from accidentally leaking to
+the browser. Two env vars pointing at the same value, in `.env.local`,
+because they're read from two different execution contexts.
+
+## Fire-and-forget analytics: `keepalive` and swallowing errors on purpose
+
+```ts
+fetch(url, { method: "POST", body, keepalive: true }).catch(() => {});
+```
+
+Two deliberate choices here, both unusual outside an analytics context:
+- `keepalive: true` tells the browser to let this request finish even if
+  the page is being unloaded right after — relevant for `download_clicked`,
+  fired the instant before the browser navigates away. It's the modern
+  fetch-based replacement for the older `navigator.sendBeacon()` API.
+- The `.catch(() => {})` isn't laziness — it's a deliberate policy decision
+  (documented in the code) that an analytics failure must never surface as
+  an error to the user or block the actual feature. Contrast with almost
+  everywhere else in this codebase, where swallowing an error silently
+  would be a bug worth flagging in review.
+
 ## `useRef` vs `useState`
 
 In `useImageCompressor.ts`, the `Worker` instance is stored in a `useRef`, not

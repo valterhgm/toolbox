@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileDropzone } from "@/components/FileDropzone";
+import { trackEvent } from "@/lib/analytics/trackEvent";
 import { formatBytes } from "./formatBytes";
 import { validateImageFile } from "./validateImageFile";
 import { isHeicFile } from "./isHeicFile";
 import { convertHeicToJpeg } from "./convertHeicToJpeg";
 import { useImageCompressor } from "./useImageCompressor";
+
+const TOOL = "image-compressor";
 
 const REASON_MESSAGES: Record<string, string> = {
   "unsupported-type": "That file type isn't supported. Use JPEG, PNG, or WebP.",
@@ -20,8 +23,30 @@ export function ImageCompressor() {
   const [isConverting, setIsConverting] = useState(false);
   const { state, compress, reset } = useImageCompressor();
 
+  useEffect(() => {
+    trackEvent({ tool: TOOL, event: "tool_viewed" });
+  }, []);
+
+  useEffect(() => {
+    if (state.status === "done") {
+      trackEvent({
+        tool: TOOL,
+        event: "compression_completed",
+        metadata: {
+          inputSize: file?.size,
+          outputSize: state.blob.size,
+        },
+      });
+    }
+  }, [state, file]);
+
   const handleFileSelected = async (selected: File) => {
     setValidationError(null);
+    trackEvent({
+      tool: TOOL,
+      event: "file_selected",
+      metadata: { fileType: selected.type, fileSize: selected.size },
+    });
 
     let workingFile = selected;
     if (isHeicFile(selected)) {
@@ -47,6 +72,7 @@ export function ImageCompressor() {
     }
     setFile(workingFile);
     reset();
+    trackEvent({ tool: TOOL, event: "compression_started", metadata: { quality } });
     compress(workingFile, quality);
   };
 
@@ -83,6 +109,11 @@ export function ImageCompressor() {
               onChange={(event) => {
                 const next = Number(event.target.value);
                 setQuality(next);
+                trackEvent({
+                  tool: TOOL,
+                  event: "compression_started",
+                  metadata: { quality: next },
+                });
                 compress(file, next);
               }}
             />
@@ -107,6 +138,7 @@ export function ImageCompressor() {
             <a
               href={downloadUrl}
               download={`compressed-${file.name.replace(/\.[^.]+$/, "")}.jpg`}
+              onClick={() => trackEvent({ tool: TOOL, event: "download_clicked" })}
               className="rounded-full bg-black px-5 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
             >
               Download

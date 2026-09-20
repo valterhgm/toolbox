@@ -83,3 +83,104 @@ build tool and compiler themselves, not just libraries.
 
 We'll repeat this cycle for every new piece of backend logic, per
 [`PLAN.md`](./PLAN.md).
+
+---
+
+## `enum` — Scala 3's sum types (no more sealed-trait boilerplate)
+
+```scala
+enum ValidationError:
+  case EmptyField(field: String)
+  case FieldTooLong(field: String, max: Int)
+```
+
+In Scala 2 this was `sealed trait ValidationError` plus a separate
+`final case class` per variant. Scala 3's `enum` is the same idea (a closed
+set of alternatives, exhaustively `match`-able) with far less ceremony —
+closest Rails/Ruby comparison is nothing, really; Ruby doesn't have a
+built-in closed-set-of-shapes construct like this, you'd normally reach for
+a symbol plus a case statement and hope you covered every case. Here the
+compiler warns you if a `match` misses one.
+
+## Trait-per-layer dependency injection ("just pass the interface in")
+
+```scala
+trait EventRepository[F[_]]:
+  def insert(event: Event): F[Unit]
+  def all: F[List[Event]]
+
+final class DefaultEventService[F[_]: Sync](repository: EventRepository[F])
+    extends EventService[F]
+```
+
+No DI framework, no annotations — `DefaultEventService` just takes an
+`EventRepository[F]` as a constructor parameter. In tests we pass an
+in-memory fake instead of the real Mongo-backed one; in `Main.scala` we pass
+the real one. This is the entire pattern: program against the trait, inject
+whichever implementation fits the context. (Closest Rails analogue: plain
+Ruby dependency injection via constructor args, without ActiveSupport
+magic — just less common as a default habit in Rails apps than it is here.)
+
+## `Ref[F, A]` — a thread-safe mutable cell, for when you actually need one
+
+```scala
+Ref.of[F, List[Event]](Nil).map(new InMemoryEventRepository(_))
+// ...
+def insert(event: Event): F[Unit] = state.update(_ :+ event)
+```
+
+Scala favors immutable values, but sometimes you genuinely need mutable
+state (like our in-memory test fake holding a growing list). A raw `var`
+isn't safe if multiple fibers touch it concurrently. `Ref` is cats-effect's
+answer: an atomic, thread-safe mutable reference, whose *reads and writes
+are themselves effects* (`state.get: F[List[Event]]`,
+`state.update(f): F[Unit]`) rather than plain synchronous mutation — so it
+composes with everything else built from `IO`.
+
+## `Concurrent[F]` vs `Sync[F]` — not every effect constraint is the same size
+
+We initially wrote `EventRoutes.routes[F[_]: Sync]`, and it failed to
+compile: decoding an HTTP request body needs `Concurrent[F]`, not just
+`Sync[F]`. Cats Effect has a hierarchy of "how much can this F actually do"
+typeclasses — `Sync` (can suspend synchronous side effects),
+`Concurrent` (can also run things concurrently, needed here because
+consuming an HTTP body is built on fs2's streaming machinery), up through
+`Async` and `Temporal`. The rule of thumb: ask for the *smallest* constraint
+that compiles — if the compiler says a method needs more, that's real
+information about what the method actually does under the hood, not just a
+box to check.
+
+## `Resource[F, A]` and `ResourceFunFixture` — guaranteed cleanup, even in tests
+
+```scala
+private def collectionResource: Resource[IO, MongoCollection[IO, Event]] =
+  for
+    client <- MongoClient.fromConnectionString[IO](uri)
+    db     <- Resource.eval(client.getDatabase("toolbox_test"))
+    coll   <- Resource.eval(db.getCollectionWithCodec[Event]("events"))
+  yield coll
+
+private val fixture = ResourceFunFixture(collectionResource)
+fixture.test("...") { coll => ... }
+```
+
+`Resource[F, A]` pairs "how to acquire an `A`" with "how to release it,
+*guaranteed*, even if something fails in between" (closest Rails analogue:
+a block form like `File.open(path) { |f| ... }` that always closes the
+file — except `Resource` values compose with `flatMap`/`for`, so you can
+chain several acquire/release pairs, as above with client → database →
+collection, and the whole chain unwinds correctly in reverse order).
+`ResourceFunFixture` (from munit-cats-effect) turns a `Resource` into a
+per-test fixture, so each test gets a fresh, guaranteed-cleaned-up resource
+without hand-writing setup/teardown methods.
+
+## A real gotcha: BSON dates only have millisecond precision
+
+`Instant.now()` on the JVM carries microsecond/nanosecond precision, but
+MongoDB's BSON `Date` type only stores milliseconds. Insert an event, read
+it back, and a *naive* equality check can fail purely on sub-millisecond
+noise Mongo silently dropped — nothing wrong with the code, just a real
+precision mismatch between two systems. Fix: `Instant.now().truncatedTo(ChronoUnit.MILLIS)`
+before comparing (or before storing, if you want the truncation to be the
+source of truth). Worth remembering for *any* database that doesn't store
+timestamps at full JVM precision — this class of bug shows up again outside Mongo too.

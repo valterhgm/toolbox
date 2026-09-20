@@ -121,18 +121,28 @@ this doesn't silently regress later. Phase 1 is closed.
 **Goal:** anonymous, privacy-respecting usage analytics stored in MongoDB,
 built with TDD, so we know if anyone actually uses the tool.
 
-- [ ] `docs/adr/0003-analytics-event-shape.md`
-- [ ] **TDD** the layered Scala backend, bottom-up, each layer with its own tests:
-  - [ ] `EventRepository` (Mongo access) — tested against a real local Mongo via testcontainers or docker-compose
-  - [ ] `EventService` (validation, rate-limit hook) — tested with an in-memory fake repository
-  - [ ] `EventRoutes` (http4s HTTP layer) — tested with http4s's request/response test helpers, faked service
-- [ ] `POST /api/v1/events` accepting `{tool, event, metadata}` — never accepts file bytes
-- [ ] Rate limiting on the events endpoint (can't let one client spam it)
-- [ ] Next.js fires events: `tool_viewed`, `file_selected`, `compression_started`, `compression_completed`, `download_clicked`
-- [ ] A tiny internal `/admin/stats` view (even just JSON) showing counts per event
+- [x] [`docs/adr/0004-analytics-events.md`](./adr/0004-analytics-events.md)
+      (numbered 0004, not 0003 — HEIC support claimed that number first)
+- [x] **TDD** the layered Scala backend, bottom-up, each layer with its own tests:
+  - [x] `EventRepository` (Mongo access) — tested against a real local Mongo.
+        Tried testcontainers first; its Docker client couldn't negotiate
+        with this machine's Docker Desktop version, so fell back to the
+        plan's other explicitly-allowed option: the docker-compose Mongo.
+  - [x] `EventService` (validation) — tested with an in-memory `Ref`-backed fake repository
+  - [x] `EventRoutes` (http4s HTTP layer) — tested with a stub `EventService`
+- [x] `POST /api/v1/events` accepting `{tool, event, metadata}` — never accepts file bytes
+- [x] Rate limiting on the events endpoint — http4s `Throttle` middleware,
+      30 requests/minute; confirmed live with a burst test (30× 201, then 429s)
+- [x] Next.js fires events: `tool_viewed`, `file_selected`, `compression_started`, `compression_completed`, `download_clicked`
+- [x] `GET /api/v1/admin/stats` — JSON counts grouped by tool + event.
+      **No authentication yet — flagged in the ADR as a must-fix before any
+      public deployment.**
 
-**Milestone:** you can see, from real MongoDB data, how many people viewed vs.
-completed vs. downloaded — our first real product signal.
+**Milestone: ACHIEVED.** Verified live end-to-end against a real running
+Mongo: posted real events via curl, confirmed validation errors return 400,
+confirmed `/admin/stats` correctly aggregates counts, confirmed rate
+limiting actually kicks in under a burst. 13/13 Scala tests passing
+(unit + service + routes + real-Mongo integration).
 
 ---
 
