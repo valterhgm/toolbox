@@ -1,7 +1,7 @@
 # ADR 0001: Overall architecture and stack
 
 ## Status
-Accepted — 2026-09-18
+Accepted: 2026-09-18
 
 ## Context
 We're building a small ecosystem of free, privacy-respecting browser tools
@@ -16,7 +16,7 @@ through real, test-driven work rather than tutorials.
   `Routes → Service → Repository`. No SQL initially; Doobie stays an option
   if a relational need appears later.
 - **Database:** MongoDB, via the official Scala driver. Added only when a
-  real persistence need exists (Phase 2 analytics) — not before.
+  real persistence need exists (Phase 2 analytics), not before.
 - **Core privacy rule:** user files (photos, PDFs, etc.) are processed
   client-side (Canvas API / Web Workers, later possibly WASM) and never
   uploaded. The backend never stores file bytes.
@@ -24,10 +24,10 @@ through real, test-driven work rather than tutorials.
   `infrastructure/*`, single `docker-compose.yml` for local MongoDB.
 
 ## Consequences
-- Backend V1 is small (just health + later events) — that's intentional,
+- Backend V1 is small (just health + later events). That's intentional,
   not a sign it's unnecessary.
 - Because processing is client-side, server costs and scaling concerns stay
-  low even at high traffic — this is a deliberate cost/privacy trade-off,
+  low even at high traffic. This is a deliberate cost/privacy trade-off,
   not a shortcut.
 - Scala code is written test-first throughout, partly for quality, partly
   because it's the chosen learning method for this project.

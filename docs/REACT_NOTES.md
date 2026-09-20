@@ -1,21 +1,21 @@
-# React/Next.js notes — building on "the basics"
+# React/Next.js notes: building on "the basics"
 
 Companion to [`SCALA_NOTES.md`](./SCALA_NOTES.md), for concepts on the frontend
 side that go beyond React fundamentals.
 
-## `"use client"` — the server/client boundary
+## `"use client"`: the server/client boundary
 
 Next.js (App Router) renders components on the **server by default**. A file
 with `"use client"` at the top opts that component (and its subtree) into
 running in the browser too, which is required for anything using `useState`,
 event handlers, or browser-only APIs (like our `Worker`). There's no Rails
-equivalent — Rails views are always server-rendered, and interactivity is
+equivalent. Rails views are always server-rendered, and interactivity is
 bolted on separately (Stimulus/jQuery/etc). In Next, a single component tree
 can mix both: `page.tsx` in `app/tools/image-compressor/` is a plain Server
 Component (just renders text), but it renders `<ImageCompressor />`, which is
 marked `"use client"` because it needs interactivity.
 
-## Discriminated unions — TypeScript's answer to Scala's sealed traits
+## Discriminated unions: TypeScript's answer to Scala's sealed traits
 
 ```ts
 export type ValidationResult =
@@ -35,22 +35,22 @@ if (!result.valid) {
 ```
 
 Same shape shows up in `useImageCompressor.ts`'s `CompressorState` (`idle` /
-`compressing` / `done` / `error`), tagged by a `status` field instead — this
+`compressing` / `done` / `error`), tagged by a `status` field instead. This
 "tagged union" pattern is the TypeScript idiom worth reaching for whenever a
 value can be one of several distinct shapes, instead of one object with a lot
 of optional/nullable fields.
 
-## Web Workers — client-side background jobs
+## Web Workers: client-side background jobs
 
 A Web Worker is a separate JS thread in the browser with no access to the DOM,
 communicating with the main thread only via `postMessage`/`onmessage`. It's
 the closest browser equivalent to a background job (think Sidekiq), except it
 runs on the user's device, not your server, and the "job" starts the moment
-you construct it — no queue, no persistence. We use one so that compressing a
+you construct it, no queue, no persistence. We use one so that compressing a
 large image (a CPU-heavy loop over pixel data) doesn't freeze the page's UI
 thread while it runs.
 
-## Dynamic `import()` — paying for code only when you use it
+## Dynamic `import()`: paying for code only when you use it
 
 ```ts
 const { default: heic2any } = await import("heic2any");
@@ -59,13 +59,13 @@ const { default: heic2any } = await import("heic2any");
 A normal `import` at the top of a file gets bundled into the page's JS
 whether or not it's ever used. `await import(...)` (dynamic import) instead
 creates a **separate chunk** that's only downloaded the moment this line
-actually runs — in our case, only when a user drops a HEIC file. Nobody
+actually runs. In our case, that's only when a user drops a HEIC file. Nobody
 compressing a plain JPEG pays for the ~1-2MB HEIC decoder. Rails has no direct
 equivalent (asset pipeline bundles are more static); the closest idea is lazy
 autoloading of a rarely-used gem, except this happens in the *browser*, per
 page load, not per process boot.
 
-## Ambient module declarations — typing a library that doesn't ship types
+## Ambient module declarations: typing a library that doesn't ship types
 
 `libheif-js` ships a `.d.ts` for its raw low-level WASM bindings, but not for
 the hand-written `HeifDecoder` convenience class we actually call. TypeScript
@@ -75,18 +75,18 @@ as untyped. The fix is an **ambient module declaration**
 `declare module "exact/import/path" { ...shape... }`, describing the shape we
 know the library has at runtime (from its README/source), so we get real type
 checking instead of reaching for `any`. Any `.d.ts` anywhere under `src/`
-is picked up automatically by `tsconfig.json`'s `**/*.ts` include pattern —
+is picked up automatically by `tsconfig.json`'s `**/*.ts` include pattern,
 no registration step needed.
 
-## `NEXT_PUBLIC_` — the difference between a server secret and a browser-visible value
+## `NEXT_PUBLIC_`: the difference between a server secret and a browser-visible value
 
-The homepage's health check (`API_BASE_URL`) runs in a Server Component —
-that code only ever executes on the server, so a plain env var is fine.
+The homepage's health check (`API_BASE_URL`) runs in a Server Component.
+That code only ever executes on the server, so a plain env var is fine.
 `trackEvent()`, though, runs in the browser (it's called from a `"use client"`
-component), so it needs `NEXT_PUBLIC_API_BASE_URL` instead — the
+component), so it needs `NEXT_PUBLIC_API_BASE_URL` instead. The
 `NEXT_PUBLIC_` prefix is Next.js's signal to actually bundle that value into
 the client-side JavaScript at build time. Anything *without* that prefix is
-stripped from client bundles entirely — which is exactly the safety net that
+stripped from client bundles entirely, which is exactly the safety net that
 keeps real secrets (API keys, database URLs) from accidentally leaking to
 the browser. Two env vars pointing at the same value, in `.env.local`,
 because they're read from two different execution contexts.
@@ -99,30 +99,30 @@ fetch(url, { method: "POST", body, keepalive: true }).catch(() => {});
 
 Two deliberate choices here, both unusual outside an analytics context:
 - `keepalive: true` tells the browser to let this request finish even if
-  the page is being unloaded right after — relevant for `download_clicked`,
+  the page is being unloaded right after, relevant for `download_clicked`,
   fired the instant before the browser navigates away. It's the modern
   fetch-based replacement for the older `navigator.sendBeacon()` API.
-- The `.catch(() => {})` isn't laziness — it's a deliberate policy decision
+- The `.catch(() => {})` isn't laziness. It's a deliberate policy decision
   (documented in the code) that an analytics failure must never surface as
   an error to the user or block the actual feature. Contrast with almost
   everywhere else in this codebase, where swallowing an error silently
   would be a bug worth flagging in review.
 
-## `BigInt` — when 64 bits of precision actually matters
+## `BigInt`: when 64 bits of precision actually matters
 
 ```ts
 let hash = 0n;
 hash = (hash << 1n) | (left > right ? 1n : 0n);
 ```
 
-Regular JS numbers are IEEE-754 doubles — safe for integers only up to
+Regular JS numbers are IEEE-754 doubles, safe for integers only up to
 2^53, not the full 64 bits we need for a dHash (8 rows × 8 bits). `BigInt`
 (the `n` suffix) is a second, separate numeric type with arbitrary
 precision and its own operators (`<<`, `|`, `^`, etc. all work, but can't
 mix a `bigint` and a regular `number` in the same expression without an
 explicit conversion). Closest Ruby comparison: Ruby's `Integer` is already
 arbitrary-precision by default (auto-promotes from a fixnum), so this
-distinction mostly doesn't exist there — it's a JS-specific wrinkle worth
+distinction mostly doesn't exist there. It's a JS-specific wrinkle worth
 knowing, and the reason `computeDHash`/`hammingDistance` take/return
 `bigint`, not `number`.
 
@@ -136,7 +136,7 @@ each item starts as its own "set," and `union(a, b)` merges two sets by
 pointing one set's root at the other; `find(x)` walks up to the current
 root of x's set. Two items are in the same group iff `find` returns the
 same root for both. It's a small, self-contained algorithm worth
-recognizing on sight — it shows up constantly for "group these things by
+recognizing on sight, since it shows up constantly for "group these things by
 some transitive relationship" problems.
 
 ## Declaration merging: patching a *built-in* type, not declaring a new one
@@ -144,7 +144,7 @@ some transitive relationship" problems.
 The `libheif-js` ambient declaration (above) invents types for a module
 that ships none. `FileSystemDirectoryHandle` is different: TypeScript
 *already* knows this type (it's in `lib.dom.d.ts`), just without its
-async-iteration methods (`.values()`) — a real gap in this TS version's
+async-iteration methods (`.values()`), a real gap in this TS version's
 bundled DOM types for a newer part of the File System Access API spec.
 Since TypeScript interfaces are open (declaring the same interface name
 twice merges the members rather than conflicting), a small
@@ -165,14 +165,14 @@ useEffect(() => {
 
 Checking a browser-only API (`window.showDirectoryPicker`) during the
 initial render would make the server-rendered HTML and the client's first
-render disagree — `window` doesn't exist on the server, so the answer
+render disagree. `window` doesn't exist on the server, so the answer
 would flip the instant the browser takes over, which React flags as a
 hydration mismatch. Setting it a tick later, inside `useEffect` (which
 never runs during server rendering), means the first render matches on
 both sides, and the "real" answer arrives immediately after mount with a
 single, harmless extra render. This is a deliberate, standard exception to
-the general "don't call `setState` synchronously inside an effect" advice
-— that advice is about avoiding *unnecessary* cascading renders, not about
+the general "don't call `setState` synchronously inside an effect" advice.
+That advice is about avoiding *unnecessary* cascading renders, not about
 never doing this specific, well-known "browser-only capability" check.
 
 ## `useRef` vs `useState`
@@ -181,5 +181,5 @@ In `useImageCompressor.ts`, the `Worker` instance is stored in a `useRef`, not
 `useState`. `useState` triggers a re-render whenever it changes; `useRef` is a
 mutable box that persists across renders *without* triggering one. We want
 the worker to survive re-renders (so we don't recreate it every time), but we
-don't want its existence to itself cause a re-render — only the compression
+don't want its existence to itself cause a re-render. Only the compression
 *result* (stored in `useState`) should do that.

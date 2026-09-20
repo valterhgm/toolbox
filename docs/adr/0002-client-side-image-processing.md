@@ -1,7 +1,7 @@
 # ADR 0002: Image processing happens entirely in the browser
 
 ## Status
-Accepted — 2026-09-19
+Accepted: 2026-09-19
 
 ## Context
 The first real product is an image compressor. We need to decide where the
@@ -14,10 +14,10 @@ client-side, using the browser's Canvas API, moved into a Web Worker so the
 UI thread doesn't freeze. The image's bytes never leave the device.
 
 ## Consequences
-- **Privacy is a real, provable claim**, not just a policy statement — we can
+- **Privacy is a real, provable claim**, not just a policy statement. We can
   say "your photo is never uploaded" because the network tab proves it.
 - **No server storage or bandwidth cost** for the core feature, regardless of
-  traffic volume — this is what makes an ads-only V1 economically sane.
+  traffic volume. This is what makes an ads-only V1 economically sane.
 - The Scala backend's job for this feature is limited to serving the page and
   (later, Phase 2) receiving anonymous *metadata* about the event
   (`{tool: "image-compressor", event: "completed", inputSize, outputSize}`),

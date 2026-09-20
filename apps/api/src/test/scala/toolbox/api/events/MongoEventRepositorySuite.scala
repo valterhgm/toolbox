@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit
   * than a testcontainers-managed disposable container. We tried
   * testcontainers-scala-mongodb first, but its bundled Docker client
   * couldn't negotiate with this machine's Docker Desktop version (a
-  * genuine tooling incompatibility, not our code) — the project plan
+  * genuine tooling incompatibility, not our code). The project plan
   * explicitly allowed either approach, so we fell back to the simpler,
   * already-working one rather than debugging a third-party version
   * mismatch further.

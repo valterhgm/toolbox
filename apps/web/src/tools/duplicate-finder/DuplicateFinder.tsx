@@ -136,8 +136,8 @@ export function DuplicateFinder() {
         <div className="flex w-full max-w-md flex-col items-center gap-5 text-center">
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             We&rsquo;ll check the photos you choose for duplicates and near-duplicates.
-            Nothing is uploaded &mdash; the comparison happens entirely on your
-            device. Nothing is deleted automatically either: you&rsquo;ll get an
+            Nothing is uploaded. The comparison happens entirely on your
+            device, and nothing is deleted automatically either: you&rsquo;ll get an
             exact list to review yourself.
           </p>
 
@@ -187,7 +187,7 @@ export function DuplicateFinder() {
 
       {state.status === "done" && state.groups.length === 0 && (
         <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-zinc-500">No duplicates found &mdash; nice and tidy!</p>
+          <p className="text-sm text-zinc-500">No duplicates found. Nice and tidy!</p>
           <ScanAgainButton onClick={reset} />
         </div>
       )}

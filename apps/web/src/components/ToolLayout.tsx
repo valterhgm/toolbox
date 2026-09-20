@@ -25,7 +25,7 @@ export function ToolLayout({ icon: Icon, name, description, children }: ToolLayo
 
       <p className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-600">
         <ShieldCheck size={14} />
-        Processed entirely on your device — never uploaded.
+        Processed entirely on your device, never uploaded.
       </p>
     </main>
   );

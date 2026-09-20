@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Toolbox — Free tools that just work",
-    template: "%s — Toolbox",
+    default: "Toolbox: Free tools that just work",
+    template: "%s - Toolbox",
   },
   description:
     "Free, private photo tools that run entirely in your browser. No account, no watermark, no upload.",
