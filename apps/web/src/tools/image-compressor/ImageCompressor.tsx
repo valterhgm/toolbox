@@ -40,7 +40,7 @@ export function ImageCompressor() {
     }
   }, [state, file]);
 
-  const handleFileSelected = async (selected: File) => {
+  const handleFilesSelected = async ([selected]: File[]) => {
     setValidationError(null);
     trackEvent({
       tool: TOOL,
@@ -82,10 +82,11 @@ export function ImageCompressor() {
   }, [state]);
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex w-full flex-col items-center gap-6">
       <FileDropzone
         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-        onFileSelected={handleFileSelected}
+        hint="JPEG, PNG, WebP, or HEIC"
+        onFilesSelected={handleFilesSelected}
       />
 
       {isConverting && (
@@ -97,8 +98,8 @@ export function ImageCompressor() {
       )}
 
       {file && (
-        <div className="flex flex-col items-center gap-4">
-          <label className="flex flex-col items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <label className="flex w-full flex-col items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
             Quality: {Math.round(quality * 100)}%
             <input
               type="range"
@@ -106,6 +107,7 @@ export function ImageCompressor() {
               max={1}
               step={0.05}
               value={quality}
+              className="w-full accent-indigo-600"
               onChange={(event) => {
                 const next = Number(event.target.value);
                 setQuality(next);
@@ -139,7 +141,7 @@ export function ImageCompressor() {
               href={downloadUrl}
               download={`compressed-${file.name.replace(/\.[^.]+$/, "")}.jpg`}
               onClick={() => trackEvent({ tool: TOOL, event: "download_clicked" })}
-              className="rounded-full bg-black px-5 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
+              className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
             >
               Download
             </a>

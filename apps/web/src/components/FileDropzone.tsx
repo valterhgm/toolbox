@@ -1,23 +1,33 @@
 "use client";
 
 import { useCallback, useState, type DragEvent } from "react";
+import { UploadCloud } from "lucide-react";
 
 type FileDropzoneProps = {
   accept: string;
-  onFileSelected: (file: File) => void;
+  hint: string;
+  onFilesSelected: (files: File[]) => void;
+  multiple?: boolean;
+  label?: string;
 };
 
-export function FileDropzone({ accept, onFileSelected }: FileDropzoneProps) {
+export function FileDropzone({
+  accept,
+  hint,
+  onFilesSelected,
+  multiple = false,
+  label = "Tap to choose a photo, or drop one here",
+}: FileDropzoneProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const handleDrop = useCallback(
     (event: DragEvent<HTMLLabelElement>) => {
       event.preventDefault();
       setIsDraggingOver(false);
-      const file = event.dataTransfer.files[0];
-      if (file) onFileSelected(file);
+      const files = Array.from(event.dataTransfer.files);
+      if (files.length > 0) onFilesSelected(multiple ? files : [files[0]]);
     },
-    [onFileSelected],
+    [onFilesSelected, multiple],
   );
 
   return (
@@ -28,41 +38,27 @@ export function FileDropzone({ accept, onFileSelected }: FileDropzoneProps) {
       }}
       onDragLeave={() => setIsDraggingOver(false)}
       onDrop={handleDrop}
-      className={`flex h-52 w-full max-w-md cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-colors ${
+      className={`flex h-52 w-full max-w-md cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed bg-white transition-colors dark:bg-zinc-900 ${
         isDraggingOver
-          ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-          : "border-zinc-300 active:bg-zinc-100 dark:border-zinc-700 dark:active:bg-zinc-900"
+          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
+          : "border-zinc-200 active:bg-zinc-50 dark:border-zinc-700 dark:active:bg-zinc-800"
       }`}
     >
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
+      <UploadCloud
+        size={32}
+        strokeWidth={1.5}
         className="text-zinc-400 dark:text-zinc-500"
-        aria-hidden
-      >
-        <path
-          d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <p className="px-4 text-center text-zinc-600 dark:text-zinc-400">
-        Tap to choose a photo, or drop one here
-      </p>
-      <p className="text-xs text-zinc-400 dark:text-zinc-600">
-        JPEG, PNG, WebP, or HEIC
-      </p>
+      />
+      <p className="px-4 text-center text-zinc-600 dark:text-zinc-400">{label}</p>
+      <p className="text-xs text-zinc-400 dark:text-zinc-600">{hint}</p>
       <input
         type="file"
         accept={accept}
+        multiple={multiple}
         className="hidden"
         onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) onFileSelected(file);
+          const files = Array.from(event.target.files ?? []);
+          if (files.length > 0) onFilesSelected(files);
         }}
       />
     </label>
